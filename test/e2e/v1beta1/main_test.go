@@ -15,12 +15,12 @@
 package v1beta1
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"testing"
 
 	operatorFramework "github.com/habitat-sh/habitat-operator/test/e2e/v1beta1/framework"
+	flag "github.com/spf13/pflag"
 )
 
 var framework *operatorFramework.Framework
