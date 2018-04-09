@@ -40,6 +40,7 @@ const (
 // CreateCRD creates the Habitat Custom Resource Definition.
 // It checks if creation has completed successfully, and deletes the CRD in case of error.
 func CreateCRD(clientset apiextensionsclient.Interface) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+	min := float64(1)
 	crd := &apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: habitatCRDName,
@@ -52,6 +53,44 @@ func CreateCRD(clientset apiextensionsclient.Interface) (*apiextensionsv1beta1.C
 				Plural:     habv1beta1.HabitatResourcePlural,
 				Kind:       reflect.TypeOf(habv1beta1.Habitat{}).Name(),
 				ShortNames: []string{habitatResourceShortName},
+			},
+			Validation: &apiextensionsv1beta1.CustomResourceValidation{
+				OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+						"spec": apiextensionsv1beta1.JSONSchemaProps{
+							Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+								"image": apiextensionsv1beta1.JSONSchemaProps{
+									Type: "string",
+								},
+								"count": apiextensionsv1beta1.JSONSchemaProps{
+									Type:    "integer",
+									Minimum: &min,
+								},
+								"service": apiextensionsv1beta1.JSONSchemaProps{
+									Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+										"name": apiextensionsv1beta1.JSONSchemaProps{
+											Type: "string",
+										},
+										"topology": apiextensionsv1beta1.JSONSchemaProps{
+											Type: "string",
+											Enum: []apiextensionsv1beta1.JSON{
+												apiextensionsv1beta1.JSON{
+													Raw: []byte("standalone"),
+												},
+												apiextensionsv1beta1.JSON{
+													Raw: []byte("leader"),
+												},
+											},
+										},
+										"group": apiextensionsv1beta1.JSONSchemaProps{
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
