@@ -66,6 +66,10 @@ jobs:
           name: print habitat object logs
           command: kubectl logs -lhabitat-operator=true --tail=100
           when: on_fail
+      - run:
+          name: delete cluster on gke
+          command: gcloud container clusters delete $GKE_CLUSTER_NAME --quiet
+          when: always
       # NOTE: this relies on journalctl, which is not present on the version of
       # Ubuntu currently run by CircleCI
       # - run:
