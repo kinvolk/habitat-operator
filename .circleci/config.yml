@@ -3,6 +3,8 @@ jobs:
   build:
     machine: true
     working_directory: ~/.go_workspace/src/github.com/habitat-sh/habitat-operator
+    environment:
+      GKE_CLUSTER_NAME: operator-test
     steps:
       - checkout
       - run:
@@ -52,6 +54,11 @@ jobs:
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             gcloud config set project $GCLOUD_PROJECT_ID
             gcloud config set compute/zone $GCLOUD_COMPUTE_ZONE
+      - run:
+          name: boot cluster on gke
+          environment:
+            K8S_VERSION: 1.10.2-gke.3
+          command: gcloud container clusters create --cluster-version=$K8S_VERSION --disk-size=20 $GKE_CLUSTER_NAME
       - run:
           name: e2e tests
           command: make TESTIMAGE=habitat/habitat-operator:testing e2e
