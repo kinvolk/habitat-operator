@@ -33,14 +33,6 @@ jobs:
       # - run:
       #     name: create image
       #     command: make TAG=testing image
-      # FIXME: temporarily disabled
-      # - run:
-      #     name: waiting for kubernetes to be ready
-      #     command: |
-      #       JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
-      #       until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do
-      #         sleep 1
-      #       done
       - run:
           name: install google cloud sdk
           environment:
@@ -64,6 +56,13 @@ jobs:
           environment:
             K8S_VERSION: 1.10.2-gke.3
           command: gcloud container clusters create --cluster-version=$K8S_VERSION --disk-size=20 $GKE_CLUSTER_NAME
+      - run:
+          name: waiting for kubernetes to be ready
+          command: |
+            JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
+            until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do
+              sleep 1
+            done
       - run:
           name: e2e tests
           command: make TESTIMAGE=habitat/habitat-operator:testing e2e
