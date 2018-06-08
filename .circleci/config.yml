@@ -26,13 +26,9 @@ jobs:
             mkdir -p $CODEGEN_PKG
             git clone https://github.com/kubernetes/code-generator.git --branch $CODEGEN_VERSION $GOPATH/src/k8s.io/code-generator
             hack/verify-codegen.sh
-      # FIXME: temporarily disabled
-      # - run:
-      #     name: unit tests
-      #     command: make test
-      # - run:
-      #     name: create image
-      #     command: make TAG=testing image
+      - run:
+          name: unit tests
+          command: make test
       - run:
           name: install google cloud sdk
           environment:
@@ -56,6 +52,9 @@ jobs:
           environment:
             K8S_VERSION: 1.10.2-gke.3
           command: gcloud container clusters create --cluster-version=$K8S_VERSION --disk-size=20 $GKE_CLUSTER_NAME
+      - run:
+          name: create image
+          command: make TAG=testing image
       - run:
           name: waiting for kubernetes to be ready
           command: |
