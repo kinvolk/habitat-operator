@@ -63,6 +63,9 @@ jobs:
               sleep 1
             done
       - run:
+          name: Grant the user the ability to create authorization roles
+          command: kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
+      - run:
           name: e2e tests
           command: make TESTIMAGE=habitat/habitat-operator:testing e2e
       - run:
