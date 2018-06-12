@@ -56,6 +56,15 @@ jobs:
           name: create image
           command: make TAG=testing image
       - run:
+          name: Configure docker to use gcloud to authenticate requests to Container Registry
+          command: gcloud auth configure-docker
+      - run:
+          name: Tag the docker image
+          command: docker tag habitat/habitat-operator:testing gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing
+      - run:
+          name: Push the docker image
+          command: docker push gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing
+      - run:
           name: waiting for kubernetes to be ready
           command: |
             JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
@@ -72,6 +81,10 @@ jobs:
           name: print habitat object logs
           command: kubectl logs -lhabitat-operator=true --tail=100
           when: on_fail
+      - run:
+          name: Delete image from Container Registry
+          command: gcloud container images delete gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing --force-delete-tags --quiet
+          when: always
       - run:
           name: delete cluster on gke
           command: gcloud container clusters delete $GKE_CLUSTER_NAME --quiet
