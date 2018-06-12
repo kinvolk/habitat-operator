@@ -48,6 +48,9 @@ jobs:
             gcloud config set project $GCLOUD_PROJECT_ID
             gcloud config set compute/zone $GCLOUD_COMPUTE_ZONE
       - run:
+          name: Update gcloud components
+          command: sudo /opt/google-cloud-sdk/bin/gcloud components update --quiet
+      - run:
           name: boot cluster on gke
           environment:
             K8S_VERSION: 1.10.2-gke.3
