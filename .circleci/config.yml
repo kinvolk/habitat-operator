@@ -63,10 +63,12 @@ jobs:
           command: gcloud auth configure-docker
       - run:
           name: Tag the docker image
-          command: docker tag habitat/habitat-operator:testing gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing
+          command: docker tag habitat/habitat-operator:testing eu.gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing
       - run:
           name: Push the docker image
-          command: docker push gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing
+          environment:
+            GCLOUD_COMPUTE_ZONE: europe-west1-b
+          command: docker push eu.gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing
       - run:
           name: waiting for kubernetes to be ready
           command: |
@@ -79,14 +81,14 @@ jobs:
           command: kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
       - run:
           name: e2e tests
-          command: make TESTIMAGE=gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing e2e
+          command: make TESTIMAGE=eu.gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing e2e
       - run:
           name: print habitat object logs
           command: kubectl logs -lhabitat-operator=true --tail=100
           when: on_fail
       - run:
           name: Delete image from Container Registry
-          command: gcloud container images delete gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing --force-delete-tags --quiet
+          command: gcloud container images delete eu.gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing --force-delete-tags --quiet
           when: always
       - run:
           name: delete cluster on gke
