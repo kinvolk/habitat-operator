@@ -79,7 +79,7 @@ jobs:
           command: kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
       - run:
           name: e2e tests
-          command: make TESTIMAGE=habitat/habitat-operator:testing e2e
+          command: make TESTIMAGE=gcr.io/$GCLOUD_PROJECT_ID/habitat/habitat-operator:testing e2e
       - run:
           name: print habitat object logs
           command: kubectl logs -lhabitat-operator=true --tail=100
