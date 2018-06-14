@@ -263,3 +263,33 @@ func QueryService(url string) (string, error) {
 
 	return string(bodyBytes), nil
 }
+
+// GetServiceIP gets the load balancer ip of a service if it exists or cluster ip
+func (f *Framework) GetServiceIP(serviceName string) (string, error) {
+	service, err := f.KubeClient.Core().Services(TestNs).Get(serviceName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	fmt.Println("load balancer ip, ", service.Spec.LoadBalancerIP)
+	fmt.Println("service spec, ", service.Spec)
+	if service.Spec.LoadBalancerIP != "" {
+		return service.Spec.LoadBalancerIP, nil
+	}
+
+	return service.Spec.ClusterIP, nil
+}
+
+// WaitForLoadBalancerIP waits for Load Balancer IP to be available
+func (f *Framework) WaitForLoadBalancerIP(serviceName string) error {
+	return wait.Poll(2*time.Second, 20*time.Minute, func() (bool, error) {
+		service, err := f.KubeClient.Core().Services(TestNs).Get(serviceName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		if service.Spec.LoadBalancerIP == "" {
+			return false, nil
+		}
+		fmt.Println("while waiting for load balancer, IP is: ", service.Spec.LoadBalancerIP)
+		return true, nil
+	})
+}
