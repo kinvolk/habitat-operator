@@ -29,6 +29,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"k8s.io/api/apps/v1beta2"
 	apiv1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -620,9 +621,13 @@ func (hc *HabitatController) conform(key string) error {
 		// Was the error due to the StatefulSet already existing?
 		if apierrors.IsAlreadyExists(err) {
 			// If yes, update it.
-			if _, err := hc.config.KubernetesClientset.AppsV1beta2().StatefulSets(h.Namespace).Update(sts); err != nil {
+			updatedSts, err := hc.config.KubernetesClientset.AppsV1beta2().StatefulSets(h.Namespace).Update(sts)
+			if err != nil {
 				return err
 			}
+
+			hc.deletePods(h, updatedSts)
+
 		} else {
 			hc.recorder.Event(h, apiv1.EventTypeWarning, stsFailed, messageStsFailed)
 			return err
@@ -634,10 +639,30 @@ func (hc *HabitatController) conform(key string) error {
 		hc.recorder.Event(h, apiv1.EventTypeNormal, stsCreated, messageStsCreated)
 	}
 
-	// Handle creation/updating of peer IP ConfigMap.
-	if err := hc.handleConfigMap(h); err != nil {
-		hc.recorder.Eventf(h, apiv1.EventTypeWarning, cmFailed, fmt.Sprintf("%s: %s", messageCMFailed, err))
+	// Handle creation/updating
+	return nil
+}
+
+func (hc *HabitatController) deletePods(hab *habv1beta1.Habitat, sts *v1beta2.StatefulSet) error {
+	podClient := hc.config.KubernetesClientset.CoreV1().Pods(sts.Namespace)
+	pods, err := podClient.List(metav1.ListOptions{})
+	if err != nil {
 		return err
+	}
+
+	for _, pod := range pods.Items {
+		ownerRefs := pod.OwnerReferences
+		if len(ownerRefs) < 1 {
+			continue
+		}
+
+		// This is dumb :(
+		ownerRef := ownerRefs[0]
+		if ownerRef.Kind == "StatefulSet" && ownerRef.Name == sts.Name {
+			if err := podClient.Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
